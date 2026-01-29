@@ -5,95 +5,60 @@ import SidebarRight from './components/SidebarRight';
 import MainContent from './components/MainContent';
 import Dashboard from './components/Dashboard';
 import Header from './components/Header';
-import { Project, Message, Task, Notification } from './types';
+import ProcessManagement from './components/ProcessManagement';
+import FileManagement from './components/FileManagement';
+import TaskManager from './components/TaskManager';
+import GeneralBoard from './components/GeneralBoard';
+import Login from './components/Auth/Login';
+import SignUp from './components/Auth/SignUp';
+import ProfileEdit from './components/ProfileEdit';
+import { INITIAL_PROJECTS, INITIAL_PROCESSES, INITIAL_TASKS, INITIAL_BOARD_POSTS } from './services/mockData';
+import { useTaskViewModel } from './hooks/useTaskViewModel';
+import { useProjectViewModel } from './hooks/useProjectViewModel';
+import { useAuthViewModel } from './hooks/useAuthViewModel';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState('dashboard');
   const [activeTab, setActiveTab] = useState('Projects');
+  const [isProfileEditing, setIsProfileEditing] = useState(false);
 
-  // Mock Data
-  const [projects] = useState<Project[]>([
-    {
-      id: '1',
-      title: '영흥도 수질 진단 컨설팅',
-      description: '대부도 일대 수질 환경 기초 데이터 수집 및 정밀 진단 분석.',
-      progress: 75,
-      status: 'In Progress',
-      dueDate: '11월 15일',
-      members: [
-        'https://picsum.photos/seed/user1/100/100',
-        'https://picsum.photos/seed/user2/100/100',
-        'https://picsum.photos/seed/user3/100/100'
-      ]
-    },
-    {
-      id: '2',
-      title: '공장 폐수 정화 모니터링',
-      description: '스마트 센싱 기술을 이용한 폐수 농도 실시간 측정 시스템 구축.',
-      progress: 42,
-      status: 'Delayed',
-      dueDate: '10월 30일',
-      members: [
-        'https://picsum.photos/seed/user4/100/100',
-        'https://picsum.photos/seed/user5/100/100'
-      ]
-    },
-    {
-      id: '3',
-      title: '지하수 오염 확산 방지 프로젝트',
-      description: '산업 단지 인근 지하수 오염 추적 및 차단 벽 설계 가이드라인.',
-      progress: 90,
-      status: 'In Progress',
-      dueDate: '12월 20일',
-      members: [
-        'https://picsum.photos/seed/user6/100/100',
-        'https://picsum.photos/seed/user7/100/100',
-        'https://picsum.photos/seed/user8/100/100',
-        'https://picsum.photos/seed/user9/100/100'
-      ]
+  // 1. Auth ViewModel 주입 (로그인 여부 체크)
+  const authVM = useAuthViewModel();
+  
+  // 2. Task/Project/Board 데이터 (로그인 후에만 유효하지만 로직상 선언)
+  const taskVM = useTaskViewModel(INITIAL_TASKS, authVM.currentUser || { id: '', name: '', avatar: '' });
+  const projectVM = useProjectViewModel(INITIAL_PROJECTS, INITIAL_PROCESSES);
+  const [boardPosts, setBoardPosts] = useState(INITIAL_BOARD_POSTS);
+
+  // --- Auth Gate ---
+  if (!authVM.isInitialized) return <div className="bg-slate-900 h-screen w-screen" />;
+
+  if (!authVM.currentUser) {
+    if (authVM.authMode === 'signup') {
+      return <SignUp onSignUp={authVM.actions.signup} onBack={() => authVM.actions.setMode('login')} />;
     }
-  ]);
-
-  const [messages] = useState<Message[]>([
-    {
-      id: '1',
-      sender: '이영희 과장',
-      avatar: 'https://picsum.photos/seed/user2/100/100',
-      text: '수질 진단 보고서 데이터 업데이트 하셨나요?',
-      time: '10:24'
-    },
-    {
-      id: '2',
-      sender: '박철수 대리',
-      avatar: 'https://picsum.photos/seed/user3/100/100',
-      text: '네, 현재 영흥도 샘플 데이터 분석 완료했습니다.',
-      time: '10:45'
-    },
-    {
-      id: '3',
-      sender: '최지민 주임',
-      avatar: 'https://picsum.photos/seed/user5/100/100',
-      text: '현장 실사 사진 클라우드에 올렸습니다.',
-      time: '11:12'
+    if (authVM.authMode === 'forgot') {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-900 p-6">
+          <div className="bg-white p-10 rounded-3xl w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">비밀번호 찾기</h2>
+            <p className="text-slate-500 text-sm mb-6">등록된 이메일 주소로 임시 비밀번호를 발송합니다.</p>
+            <input type="email" placeholder="email@deojon.com" className="w-full px-5 py-3.5 bg-slate-50 border rounded-2xl mb-6 outline-none" />
+            <div className="flex gap-4">
+              <button onClick={() => authVM.actions.setMode('login')} className="flex-1 py-3 text-slate-400 font-bold">취소</button>
+              <button onClick={() => authVM.actions.sendTempPassword('test@email.com')} className="flex-1 bg-blue-600 text-white rounded-xl font-bold">발송하기</button>
+            </div>
+          </div>
+        </div>
+      );
     }
-  ]);
-
-  const [teamTasks] = useState<Task[]>([
-    { id: 't1', text: '전체 공정 로드맵 확정', dueDate: '11/10', completed: false },
-    { id: 't2', text: '대부도 현장 안전 점검', dueDate: '11/12', completed: true },
-    { id: 't3', text: '기술 진단 표준 매뉴얼 배포', dueDate: '11/15', completed: false }
-  ]);
-
-  const [personalTasks] = useState<Task[]>([
-    { id: 'p1', text: '현장 진단 로그 분석', dueDate: 'Today', completed: false },
-    { id: 'p2', text: 'API 문서 최종 검토', dueDate: 'Tomorrow', completed: true },
-    { id: 'p3', text: '주간 회의 자료 준비', dueDate: 'Friday', completed: false }
-  ]);
-
-  const [notifications] = useState<Notification[]>([
-    { id: '1', text: '새로운 업무가 할당되었습니다.', time: '5m ago', type: 'info' },
-    { id: '2', text: '프로젝트 마감이 3일 남았습니다.', time: '1h ago', type: 'alert' }
-  ]);
+    return <Login 
+      onLogin={(id, rem) => authVM.actions.login({ id, rememberId: rem })} 
+      onGoSignUp={() => authVM.actions.setMode('signup')}
+      onGoForgot={() => authVM.actions.setMode('forgot')}
+    />;
+  }
+  // -----------------
 
   const getViewTitle = () => {
     switch (currentView) {
@@ -109,7 +74,13 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-50 fixed inset-0">
-      <SidebarLeft currentView={currentView} onViewChange={setCurrentView} />
+      <SidebarLeft 
+        currentView={currentView} 
+        onViewChange={setCurrentView} 
+        onEditProfile={() => setIsProfileEditing(true)}
+        onLogout={authVM.actions.logout}
+        user={authVM.currentUser}
+      />
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-[500px] bg-white">
         <Header 
@@ -119,25 +90,63 @@ const App: React.FC = () => {
           onTabChange={setActiveTab} 
         />
         
-        {currentView === 'dashboard' ? (
-          <Dashboard recentProjects={projects} />
-        ) : currentView === 'projects' ? (
-          <MainContent projects={projects} />
-        ) : (
-          <div className="flex-1 flex items-center justify-center bg-slate-50/30 text-slate-400">
-            <div className="text-center">
-              <span className="material-symbols-outlined text-6xl mb-4">construction</span>
-              <p className="font-bold text-lg">{getViewTitle()} 페이지 준비 중</p>
+        <div className="flex-1 overflow-hidden relative">
+          {currentView === 'dashboard' ? (
+            <Dashboard recentProjects={projectVM.projects} />
+          ) : currentView === 'projects' ? (
+            <MainContent projects={projectVM.projects} />
+          ) : currentView === 'process' ? (
+            <ProcessManagement 
+              projects={projectVM.projects} 
+              processes={projectVM.processes}
+              onToggleProcess={projectVM.actions.toggleProcess}
+              onAddProcess={(p) => projectVM.actions.addProcess({ ...p, id: `pr-${Date.now()}`, isCompleted: false })}
+              onUpdateProcess={projectVM.actions.updateProcess}
+            />
+          ) : currentView === 'files' ? (
+            <FileManagement />
+          ) : currentView === 'tasks' ? (
+            <TaskManager 
+              tasks={taskVM.tasks} 
+              currentUser={authVM.currentUser}
+              onAddTask={taskVM.actions.addTask}
+              onUpdateTask={taskVM.actions.updateTask}
+              onDeleteTask={taskVM.actions.deleteTask}
+            />
+          ) : currentView === 'board' ? (
+            <GeneralBoard 
+              posts={boardPosts}
+              currentUser={authVM.currentUser}
+              onAddPost={(p) => setBoardPosts(prev => [p, ...prev])}
+              onUpdatePost={(p) => setBoardPosts(prev => prev.map(old => old.id === p.id ? p : old))}
+              onDeletePost={(id) => setBoardPosts(prev => prev.filter(p => p.id !== id))}
+            />
+          ) : (
+            <div className="flex-1 flex items-center justify-center bg-slate-50/30 text-slate-400">
+              <div className="text-center">
+                <span className="material-symbols-outlined text-6xl mb-4">construction</span>
+                <p className="font-bold text-lg">{getViewTitle()} 페이지 준비 중</p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Profile Edit Overlay */}
+          {isProfileEditing && (
+            <ProfileEdit 
+              user={authVM.currentUser} 
+              onClose={() => setIsProfileEditing(false)} 
+              onSave={authVM.actions.updateProfile} 
+            />
+          )}
+        </div>
       </div>
 
       <SidebarRight 
-        messages={messages} 
-        teamTasks={teamTasks}
-        personalTasks={personalTasks}
-        notifications={notifications} 
+        messages={[]} 
+        teamTasks={taskVM.tasks.filter(t => !t.completed).slice(0, 5)}
+        personalTasks={taskVM.tasks.filter(t => t.authorId === authVM.currentUser.id && !t.completed)}
+        notifications={[]} 
+        onViewTask={() => setCurrentView('tasks')}
       />
     </div>
   );

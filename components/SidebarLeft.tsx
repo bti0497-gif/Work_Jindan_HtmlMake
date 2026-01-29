@@ -1,18 +1,15 @@
-/**
- * WARNING: DO NOT MODIFY UI/UX WITHOUT EXPLICIT PERMISSION.
- * This UI/UX design and interaction pattern are finalized for the Deojon Environment Technology 
- * Technical Diagnosis Team Collaboration Studio. Any unauthorized changes to layouts, 
- * navigation structures, or styling are strictly prohibited.
- */
 
 import React from 'react';
+import { User } from '../types';
 
 interface SidebarLeftProps {
   currentView: string;
   onViewChange: (view: string) => void;
+  onEditProfile: () => void;
+  onLogout: () => void;
+  user: User;
 }
 
-// Sub-component for individual Navigation Items
 const NavItem: React.FC<{ icon: string; label: string; active?: boolean; onClick: () => void }> = ({ icon, label, active, onClick }) => (
   <li>
     <button 
@@ -29,7 +26,6 @@ const NavItem: React.FC<{ icon: string; label: string; active?: boolean; onClick
   </li>
 );
 
-// Sub-component for User List items
 const UserItem: React.FC<{ name: string; avatar: string }> = ({ name, avatar }) => (
   <li className="flex items-center justify-between px-3 py-1 hover:bg-slate-800/50 rounded-lg transition-colors group">
     <div className="flex items-center gap-3 min-w-0">
@@ -43,7 +39,7 @@ const UserItem: React.FC<{ name: string; avatar: string }> = ({ name, avatar }) 
   </li>
 );
 
-const SidebarLeft: React.FC<SidebarLeftProps> = ({ currentView, onViewChange }) => {
+const SidebarLeft: React.FC<SidebarLeftProps> = ({ currentView, onViewChange, onEditProfile, onLogout, user }) => {
   const activeUsers = [
     { name: '이영희 과장', avatar: 'https://picsum.photos/seed/user2/100/100' },
     { name: '박철수 대리', avatar: 'https://picsum.photos/seed/user3/100/100' },
@@ -59,7 +55,6 @@ const SidebarLeft: React.FC<SidebarLeftProps> = ({ currentView, onViewChange }) 
 
   return (
     <aside className="w-[18%] min-w-[260px] max-w-[310px] bg-slate-900 flex flex-col shrink-0 border-r border-slate-800 h-full overflow-hidden">
-      {/* 1. Header Section (Dashboard Home Shortcut) */}
       <div className="p-6 border-b border-slate-800 shrink-0">
         <button 
           onClick={() => onViewChange('dashboard')}
@@ -74,26 +69,33 @@ const SidebarLeft: React.FC<SidebarLeftProps> = ({ currentView, onViewChange }) 
         </button>
       </div>
 
-      {/* 2. Profile & Logout Section */}
       <div className="px-4 pt-6 shrink-0">
         <section className="bg-slate-800 border border-slate-700 rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">내 프로필</span>
-            <span className="material-symbols-outlined text-[18px] text-slate-500 cursor-pointer hover:text-slate-300 transition-colors">settings</span>
+            <button 
+              onClick={onEditProfile}
+              className="material-symbols-outlined text-[18px] text-slate-500 cursor-pointer hover:text-slate-300 transition-colors"
+            >
+              settings
+            </button>
           </div>
           <div className="flex items-start gap-4">
             <div className="relative shrink-0">
               <img 
                 alt="Profile" 
                 className="size-12 rounded-lg object-cover border-2 border-slate-600 shadow-inner" 
-                src="https://picsum.photos/seed/master/100/100" 
+                src={user.avatar} 
               />
               <div className="absolute -bottom-1 -right-1 size-3.5 bg-green-500 rounded-full border-2 border-slate-800"></div>
             </div>
             <div className="flex-1 min-w-0">
-              <span className="text-slate-100 text-[14px] font-bold block truncate">김진단 팀장</span>
-              <span className="bg-blue-500/10 text-blue-400 text-[9px] font-bold px-1.5 py-0.5 rounded border border-blue-500/20 uppercase inline-block mt-0.5 mb-2">Master</span>
-              <button className="w-full py-1.5 text-[10px] font-bold text-slate-400 bg-slate-900/50 hover:bg-red-500 hover:text-white rounded border border-slate-700 hover:border-red-400 transition-all flex items-center justify-center gap-1">
+              <span className="text-slate-100 text-[14px] font-bold block truncate">{user.name}</span>
+              <span className="bg-blue-500/10 text-blue-400 text-[9px] font-bold px-1.5 py-0.5 rounded border border-blue-500/20 uppercase inline-block mt-0.5 mb-2">{user.role}</span>
+              <button 
+                onClick={onLogout}
+                className="w-full py-1.5 text-[10px] font-bold text-slate-400 bg-slate-900/50 hover:bg-red-500 hover:text-white rounded border border-slate-700 hover:border-red-400 transition-all flex items-center justify-center gap-1"
+              >
                 <span className="material-symbols-outlined text-[14px]">logout</span>
                 LOGOUT
               </button>
@@ -102,7 +104,6 @@ const SidebarLeft: React.FC<SidebarLeftProps> = ({ currentView, onViewChange }) 
         </section>
       </div>
 
-      {/* 3. Navigation Section */}
       <div className="px-4 pt-6 shrink-0">
         <div className="px-3 py-2">
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">스튜디오 메뉴</span>
@@ -116,7 +117,6 @@ const SidebarLeft: React.FC<SidebarLeftProps> = ({ currentView, onViewChange }) 
         </ul>
       </div>
 
-      {/* 4. Active Users Section */}
       <div className="flex-1 overflow-hidden flex flex-col mt-6">
         <div className="px-7 py-2 shrink-0 flex items-center gap-2">
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">현재 접속자</span>
@@ -132,7 +132,6 @@ const SidebarLeft: React.FC<SidebarLeftProps> = ({ currentView, onViewChange }) 
         </div>
       </div>
 
-      {/* 5. Footer Info */}
       <div className="p-4 border-t border-slate-800 bg-slate-950/40 shrink-0">
         <div className="flex items-center justify-center gap-2 py-2 text-slate-600">
           <span className="material-symbols-outlined text-[18px]">info</span>

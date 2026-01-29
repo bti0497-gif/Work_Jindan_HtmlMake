@@ -109,10 +109,8 @@ const ProjectListItem: React.FC<{
 }> = ({ project, onClick, selectionMode, isSelected, onToggleSelect }) => {
   const getStatusStyles = (status: string) => {
     switch (status) {
-      case 'In Progress': return 'bg-green-50 text-green-600 border-green-100';
-      case 'Delayed': return 'bg-red-50 text-red-600 border-red-100';
-      case 'Pending': return 'bg-amber-50 text-amber-600 border-amber-100';
-      default: return 'bg-slate-50 text-slate-600 border-slate-100';
+      case 'Completed': return 'bg-blue-50 text-blue-600 border-blue-100';
+      default: return 'bg-green-50 text-green-600 border-green-100';
     }
   };
 
@@ -132,7 +130,7 @@ const ProjectListItem: React.FC<{
       )}
       <td className={`py-4 ${!selectionMode ? 'pl-4' : ''}`}>
         <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full border uppercase tracking-tighter ${getStatusStyles(project.status)}`}>
-          {project.status === 'In Progress' ? '진행중' : project.status === 'Delayed' ? '지연됨' : '대기'}
+          {project.status === 'Completed' ? '완료' : '진행중'}
         </span>
       </td>
       <td className="py-4">
@@ -145,7 +143,7 @@ const ProjectListItem: React.FC<{
         <div className="flex items-center gap-3">
           <div className="flex-1 max-w-[100px] h-1.5 bg-slate-100 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-blue-600 rounded-full transition-all duration-1000" 
+              className={`h-full rounded-full transition-all duration-1000 ${project.status === 'Completed' ? 'bg-blue-600' : 'bg-green-500'}`} 
               style={{ width: `${project.progress}%` }}
             />
           </div>
@@ -176,9 +174,6 @@ const ProjectListItem: React.FC<{
   );
 };
 
-/**
- * Pagination and New Project Button Bar
- */
 const NavigationFooter: React.FC<{ onNewProject: () => void }> = ({ onNewProject }) => (
   <div className="mt-12 grid grid-cols-3 items-center">
     <div />

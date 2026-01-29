@@ -4,9 +4,20 @@ export interface Project {
   title: string;
   description: string;
   progress: number;
-  status: 'In Progress' | 'Pending' | 'Completed' | 'Delayed';
+  status: 'In Progress' | 'Completed';
   dueDate: string;
   members: string[]; // URLs of avatars
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  detailAddress: string;
+  avatar: string;
+  role: 'master' | 'admin' | 'user';
 }
 
 export interface Message {
@@ -20,8 +31,24 @@ export interface Message {
 export interface Task {
   id: string;
   text: string;
-  dueDate: string;
+  targetDate: string;
+  regDate: string;
   completed: boolean;
+  author: string;
+  authorId: string;
+  authorAvatar: string;
+  isPublic: boolean;
+}
+
+export interface BoardPost {
+  id: string;
+  title: string;
+  content: string;
+  author: string;
+  authorId: string;
+  authorAvatar: string;
+  regDate: string;
+  views: number;
 }
 
 export interface Notification {
@@ -37,6 +64,17 @@ export interface ProcessLog {
   step: string;
   status: 'Completed' | 'In Progress' | 'Standby';
   updatedAt: string;
+}
+
+export interface Process {
+  id: string;
+  projectId: string;
+  title: string;
+  startDate: string;
+  endDate: string;
+  members: string[]; // Avatar URLs
+  description: string;
+  isCompleted: boolean;
 }
 
 export interface FileInfo {
