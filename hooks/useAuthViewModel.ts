@@ -17,29 +17,13 @@ export const useAuthViewModel = () => {
 
   const actions = {
     login: async (params: LoginParams) => {
-      // Mock Login Logic
-      /* master 전용 로그인 주석 처리
-      if (params.id === 'master') {
-        const mockUser: User = {
-          id: 'master',
-          name: '김진단 팀장',
-          email: 'master@deojon.com',
-          phone: '010-1234-5678',
-          address: '경기도 성남시 분당구 판교역로 166',
-          detailAddress: '카카오판교오피스 10층',
-          avatar: 'https://picsum.photos/seed/master/100/100',
-          role: 'master'
-        };
-        setCurrentUser(mockUser);
-        if (params.rememberId) localStorage.setItem('savedUserId', params.id);
-        else localStorage.removeItem('savedUserId');
-        return true;
+      // 아이디가 비어있는지 마지막으로 한 번 더 체크 (ViewModel 레벨 보호)
+      if (!params.id || params.id.trim() === '') {
+        return false;
       }
-      alert('아이디를 확인해주세요. (테스트용 ID: master)');
-      return false;
-      */
 
       // 범용 Mock Login (입력한 ID로 로그인 처리)
+      // 실제 백엔드 연동 시 이 부분이 fetch() 또는 axios 호출로 바뀝니다.
       const mockUser: User = {
         id: params.id,
         name: `${params.id} 연구원`,
@@ -50,8 +34,15 @@ export const useAuthViewModel = () => {
         avatar: `https://picsum.photos/seed/${params.id}/100/100`,
         role: 'user'
       };
+      
       setCurrentUser(mockUser);
-      if (params.rememberId) localStorage.setItem('savedUserId', params.id);
+      
+      if (params.rememberId) {
+        localStorage.setItem('savedUserId', params.id);
+      } else {
+        localStorage.removeItem('savedUserId');
+      }
+      
       return true;
     },
     

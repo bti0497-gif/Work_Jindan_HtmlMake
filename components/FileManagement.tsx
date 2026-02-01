@@ -1,304 +1,226 @@
 
-/**
- * FINALIZED UI COMPONENT - DEOJON TECH STUDIO
- * WINDOWS 11 EXPLORER STYLE FILE MANAGEMENT (WITH RESIZABLE PREVIEW PANE)
- */
-
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 
 interface FileItem {
   id: string;
   name: string;
-  type: 'folder' | 'xlsx' | 'pdf' | 'docx' | 'png';
-  status: 'synced' | 'syncing' | 'local';
-  updatedAt: string;
+  type: 'folder' | 'xlsx' | 'pdf' | 'docx' | 'png' | 'zip' | 'json';
   size: string;
+  sizeBytes: number;
+  updatedAt: string;
+  uploader: string;
+  status: 'synced' | 'syncing';
 }
-
-const DRIVE_LINK = "https://drive.google.com/drive/folders/1U1vGTvNjikkZXxhw_P08EKx0wdU3QZZb?usp=sharing";
 
 const FileManagement: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showPreview, setShowPreview] = useState(true);
-  const [previewWidth, setPreviewWidth] = useState(420); // 초기 너비
-  const [isResizing, setIsResizing] = useState(false);
-  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, fileId: string } | null>(null);
-  
-  const containerRef = useRef<HTMLDivElement>(null);
-  const resizerRef = useRef<HTMLDivElement>(null);
+  const [viewMode, setViewMode] = useState<'details' | 'icons'>('details');
+  const [showInfoPanel, setShowInfoPanel] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
 
-  // 스크린샷 기반 초기 데이터
-  const [files] = useState<FileItem[]>([
-    { id: 'd1', name: '202505', type: 'folder', status: 'synced', updatedAt: '2025-05-10', size: '' },
-    { id: 'd2', name: '202506', type: 'folder', status: 'synced', updatedAt: '2025-06-12', size: '' },
-    { id: 'd3', name: '202507', type: 'folder', status: 'synced', updatedAt: '2025-07-15', size: '' },
-    { id: 'd4', name: '202508', type: 'folder', status: 'synced', updatedAt: '2025-08-20', size: '' },
-    { id: 'f1', name: '대신환경 명세서', type: 'xlsx', status: 'syncing', updatedAt: '2026-01-15', size: '42 KB' },
-    { id: 'f2', name: '에이치디이앤씨 거래명세표', type: 'xlsx', status: 'syncing', updatedAt: '2026-01-20', size: '38 KB' },
-    { id: 'f3', name: '영일과학상사 거래명세서', type: 'xlsx', status: 'syncing', updatedAt: '2026-01-22', size: '45 KB' },
-    { id: 'f4', name: '청담 거래명세서', type: 'xlsx', status: 'synced', updatedAt: '2025-12-15', size: '31 KB' },
-  ]);
+  // 스토리지 상태 관리
+  const mockFiles: FileItem[] = [
+    { id: 'f1', name: '2024년 상반기 수질검사 보고서', type: 'pdf', size: '12.4 MB', sizeBytes: 13002342, updatedAt: '2024-05-15 14:20', uploader: '이영희 과장', status: 'synced' },
+    { id: 'f2', name: '영흥도 현장 샘플 데이터 시트', type: 'xlsx', size: '2.1 MB', sizeBytes: 2202342, updatedAt: '2024-06-10 11:45', uploader: '박철수 대리', status: 'syncing' },
+    { id: 'f3', name: '정화 시설 평면도_최종', type: 'png', size: '45.8 MB', sizeBytes: 48023422, updatedAt: '2024-07-22 16:10', uploader: '최지민 주임', status: 'synced' },
+    { id: 'f4', name: '진단 장비 매뉴얼(K-Tech)', type: 'docx', size: '8.2 MB', sizeBytes: 8602342, updatedAt: '2024-01-05 09:30', uploader: '정성훈 차장', status: 'synced' },
+    { id: 'f5', name: '현장 사진 아카이브', type: 'zip', size: '1.2 GB', sizeBytes: 1288490188, updatedAt: '2024-08-14 17:55', uploader: '강혜원 선임', status: 'synced' },
+  ];
 
-  const [currentPath] = useState(['OneDrive 시작', '태일 - 개인', '바탕 화면', '점검준비', '명세서']);
+  const [files, setFiles] = useState<FileItem[]>(mockFiles);
 
-  // --- Resizing Logic ---
-  const startResizing = useCallback((e: React.MouseEvent) => {
+  const totalStorageGB = 500;
+  const usedStorageGB = 142.5;
+  const storagePercentage = (usedStorageGB / totalStorageGB) * 100;
+
+  const filteredFiles = useMemo(() => {
+    return files.filter(f => 
+      f.name.toLowerCase().includes(searchQuery.toLowerCase()) && 
+      f.name.toLowerCase() !== 'json' && 
+      !f.name.toLowerCase().endsWith('.json')
+    );
+  }, [searchQuery, files]);
+
+  const selectedFile = useMemo(() => {
+    return files.find(f => f.id === selectedId) || null;
+  }, [selectedId, files]);
+
+  // Drag & Drop Handlers
+  const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    setIsResizing(true);
+    setIsDragging(true);
   }, []);
 
-  const stopResizing = useCallback(() => {
-    setIsResizing(false);
-  }, []);
-
-  const resize = useCallback((e: MouseEvent) => {
-    if (isResizing && containerRef.current) {
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const newWidth = containerRect.right - e.clientX;
-      
-      // 너비 제한: 최소 250px, 최대 600px
-      if (newWidth > 250 && newWidth < 600) {
-        setPreviewWidth(newWidth);
-      }
-    }
-  }, [isResizing]);
-
-  useEffect(() => {
-    if (isResizing) {
-      window.addEventListener('mousemove', resize);
-      window.addEventListener('mouseup', stopResizing);
-      document.body.style.cursor = 'col-resize';
-      document.body.style.userSelect = 'none'; // 드래그 중 텍스트 선택 방지
-    } else {
-      window.removeEventListener('mousemove', resize);
-      window.removeEventListener('mouseup', stopResizing);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    }
-    return () => {
-      window.removeEventListener('mousemove', resize);
-      window.removeEventListener('mouseup', stopResizing);
-    };
-  }, [isResizing, resize, stopResizing]);
-  // ----------------------
-
-  useEffect(() => {
-    const handleClick = () => setContextMenu(null);
-    window.addEventListener('click', handleClick);
-    return () => window.removeEventListener('click', handleClick);
-  }, []);
-
-  const openDrive = () => { 
-    window.open(DRIVE_LINK, '_blank'); 
-  };
-
-  const handleContextMenu = (e: React.MouseEvent, id: string) => {
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    setSelectedId(id);
-    setContextMenu({ x: e.clientX, y: e.clientY, fileId: id });
-  };
+    setIsDragging(false);
+  }, []);
 
-  const getIcon = (type: string) => {
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    if (droppedFiles.length === 0) return;
+
+    droppedFiles.forEach(file => {
+      const newFile: FileItem = {
+        id: `f-new-${Date.now()}-${Math.random()}`,
+        name: file.name,
+        type: file.name.split('.').pop() as any || 'pdf',
+        size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+        sizeBytes: file.size,
+        updatedAt: new Date().toLocaleString(),
+        uploader: '나 (본인)',
+        status: 'syncing'
+      };
+      setFiles(prev => [newFile, ...prev]);
+
+      // 시뮬레이션: 3초 후 동기화 완료
+      setTimeout(() => {
+        setFiles(current => current.map(f => f.id === newFile.id ? { ...f, status: 'synced' } : f));
+      }, 3000);
+    });
+  }, []);
+
+  const getFileIcon = (type: string) => {
     switch (type) {
       case 'folder': return { icon: 'folder', color: 'text-amber-400' };
       case 'xlsx': return { icon: 'table_chart', color: 'text-green-600' };
+      case 'pdf': return { icon: 'picture_as_pdf', color: 'text-red-500' };
+      case 'png': return { icon: 'image', color: 'text-blue-500' };
+      case 'zip': return { icon: 'inventory_2', color: 'text-orange-500' };
       default: return { icon: 'description', color: 'text-slate-400' };
     }
   };
 
   return (
-    <div ref={containerRef} className="flex flex-col h-full bg-white overflow-hidden text-[#333] relative">
+    <div 
+      className={`flex flex-col h-full bg-white overflow-hidden select-none transition-colors duration-300 ${isDragging ? 'bg-blue-50/50 ring-4 ring-blue-400 ring-inset' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       
-      {/* 1. Command Bar */}
-      <div className="flex items-center justify-between px-4 py-1.5 border-b border-slate-200 bg-[#f3f3f3] shrink-0">
-        <div className="flex items-center gap-0.5">
-          <button className="flex items-center gap-2 px-2.5 py-1.5 hover:bg-slate-200 rounded-md transition-colors group">
-            <span className="material-symbols-outlined text-blue-600 text-[20px] group-active:scale-90 transition-transform">add_box</span>
-            <span className="text-[12px] font-medium">새로 만들기</span>
-            <span className="material-symbols-outlined text-[14px] text-slate-400">expand_more</span>
-          </button>
-          <div className="w-px h-5 bg-slate-300 mx-1.5"></div>
-          <div className="flex items-center gap-0.5">
-            {['content_cut', 'content_copy', 'content_paste', 'drive_file_rename_outline', 'share', 'delete'].map((icon, idx) => (
-              <button key={icon} title={icon} className={`p-2 rounded-md transition-all ${idx === 2 ? 'text-slate-300 cursor-not-allowed' : 'hover:bg-slate-200 text-slate-600 active:scale-90'}`}>
-                <span className="material-symbols-outlined text-[18px]">{icon}</span>
-              </button>
-            ))}
+      {/* Drag Overlay 안내 */}
+      {isDragging && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
+          <div className="bg-blue-600 text-white px-8 py-6 rounded-3xl shadow-2xl flex flex-col items-center gap-4 animate-bounce">
+            <span className="material-symbols-outlined text-6xl">cloud_upload</span>
+            <p className="text-xl font-black">스토리지에 파일 드롭하여 업로드</p>
           </div>
-          <div className="w-px h-5 bg-slate-300 mx-1.5"></div>
-          <button className="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-200 rounded-md text-[12px] font-medium text-slate-600"><span className="material-symbols-outlined text-[18px]">sort</span>정렬</button>
-          <button className="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-200 rounded-md text-[12px] font-medium text-slate-600"><span className="material-symbols-outlined text-[18px]">view_list</span>보기</button>
         </div>
-        <button onClick={() => setShowPreview(!showPreview)} className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[12px] font-medium transition-all ${showPreview ? 'bg-[#e5f3ff] text-blue-700 shadow-sm ring-1 ring-blue-100' : 'hover:bg-slate-200 text-slate-600'}`}>
-          <span className="material-symbols-outlined text-[18px]">info</span>미리 보기
+      )}
+
+      {/* 1. Command Bar */}
+      <div className="h-14 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between px-4 shrink-0">
+        <div className="flex items-center gap-1">
+          <button className="flex items-center gap-2 px-3 py-1.5 hover:bg-slate-200 rounded-lg transition-colors group">
+            <span className="material-symbols-outlined text-blue-600">add_box</span>
+            <span className="text-[14px] font-bold">새로 만들기</span>
+          </button>
+          <div className="w-px h-6 bg-slate-300 mx-3"></div>
+          <button className="w-9 h-9 flex items-center justify-center hover:bg-slate-200 rounded-lg text-red-500 transition-all active:scale-90">
+            <span className="material-symbols-outlined text-[20px]">delete</span>
+          </button>
+        </div>
+        <button onClick={() => setShowInfoPanel(!showInfoPanel)} className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-[13px] font-bold transition-all ${showInfoPanel ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-slate-200 text-slate-600'}`}>
+          <span className="material-symbols-outlined text-[20px]">info</span>미리 보기
         </button>
       </div>
 
-      {/* 2. Navigation Bar */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-slate-100 bg-white shrink-0">
-        <div className="flex items-center gap-0.5 text-slate-400 mr-2">
-          <button className="p-1.5 hover:bg-slate-100 rounded active:bg-slate-200"><span className="material-symbols-outlined text-[18px]">arrow_back</span></button>
-          <button className="p-1.5 hover:bg-slate-100 rounded active:bg-slate-200"><span className="material-symbols-outlined text-[18px]">arrow_forward</span></button>
-          <button className="p-1.5 hover:bg-slate-100 rounded active:bg-slate-200"><span className="material-symbols-outlined text-[18px]">expand_less</span></button>
-        </div>
-        <div className="flex-1 flex items-center bg-white border border-slate-200 rounded px-2.5 py-1 gap-2 focus-within:border-blue-400 transition-colors">
-          <span className="material-symbols-outlined text-[18px] text-blue-500">cloud</span>
-          <div className="flex items-center text-[12px] text-slate-600 overflow-hidden font-medium">
-            {currentPath.map((path, idx) => (
-              <React.Fragment key={idx}>
-                <span className="hover:bg-slate-100 px-1 py-0.5 rounded cursor-pointer">{path}</span>
-                {idx < currentPath.length - 1 && <span className="material-symbols-outlined text-[14px] mx-0.5 text-slate-400">chevron_right</span>}
-              </React.Fragment>
-            ))}
+      {/* 2. Navigation & Search Bar */}
+      <div className="h-12 border-b border-slate-100 bg-white flex items-center px-4 gap-4 shrink-0">
+        <div className="flex-1 flex items-center bg-slate-50 border border-slate-200 rounded-lg px-4 py-1.5 gap-3">
+          <span className="material-symbols-outlined text-blue-600 text-[20px]">cloud</span>
+          <div className="text-[12px] text-slate-600 font-bold overflow-hidden">
+            <span className="text-blue-600">내 스토리지</span> > 기술진단 보고서
           </div>
-          <span className="material-symbols-outlined text-[16px] text-slate-400 ml-auto cursor-pointer hover:text-blue-500">expand_more</span>
         </div>
-        <div className="relative w-60">
-          <input type="text" placeholder="검색" className="w-full bg-white border border-slate-200 rounded px-3 py-1 text-[12px] outline-none focus:ring-1 focus:ring-blue-400 pr-8 shadow-inner" />
-          <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">search</span>
+        <div className="w-72 relative">
+          <input type="text" placeholder="스토리지 내 검색" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-1.5 text-[12px] font-medium outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-400 focus:bg-white transition-all"/>
+          <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
         </div>
       </div>
 
       {/* 3. Main Body */}
       <div className="flex-1 flex overflow-hidden">
-        
-        {/* Left Tree Pane */}
-        <aside className="w-52 border-r border-slate-200 overflow-y-auto sidebar-dark-scrollbar py-2 bg-[#f9f9f9]">
-          <ul className="space-y-0.5 px-2">
-            {['바탕 화면', '다운로드', '문서', '사진', '월정산', '명세서'].map((label, idx) => (
-              <li key={idx}>
-                <button className={`w-full flex items-center gap-3 px-3 py-1.5 rounded text-left transition-colors ${label === '명세서' ? 'bg-[#e5f3ff] text-blue-700 font-bold' : 'hover:bg-slate-200 text-slate-600'}`}>
-                  <span className="material-symbols-outlined text-[18px] text-blue-500">{label === '명세서' ? 'description' : 'folder'}</span>
-                  <span className="text-[12px] flex-1">{label}</span>
-                  {label === '명세서' && <span className="material-symbols-outlined text-[14px] text-slate-400">push_pin</span>}
-                </button>
-              </li>
+        <aside className="w-64 border-r border-slate-200 bg-slate-50/30 overflow-y-auto sidebar-dark-scrollbar py-4">
+          <ul className="space-y-0.5 px-3">
+            <li>
+              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left bg-white shadow-sm ring-1 ring-slate-200 text-blue-600 font-bold">
+                <span className="material-symbols-outlined text-[20px]">cloud_queue</span>
+                <span className="text-[13px]">내 스토리지</span>
+              </button>
+            </li>
+            {['중요 문서함', '최근 항목', '공유된 항목', '휴지통'].map((label, idx) => (
+              <li key={idx}><button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left text-slate-600 hover:bg-slate-200/50"><span className="material-symbols-outlined text-slate-400 text-[20px]">{idx === 0 ? 'label_important' : idx === 1 ? 'schedule' : idx === 2 ? 'group' : 'delete'}</span><span className="text-[13px]">{label}</span></button></li>
             ))}
           </ul>
         </aside>
 
-        {/* File List Pane */}
-        <main className="flex-1 overflow-auto flex flex-col bg-white">
-          <table className="w-full text-left border-collapse min-w-[600px] table-fixed">
-            <thead className="sticky top-0 bg-white border-b border-slate-100 shadow-sm z-10">
-              <tr>
-                <th className="py-2 px-6 text-[11px] font-bold text-slate-500 border-r border-slate-100 w-1/2 cursor-default hover:bg-slate-50">이름</th>
-                <th className="py-2 px-4 text-[11px] font-bold text-slate-500 border-r border-slate-100 w-24 text-center cursor-default hover:bg-slate-50">상태</th>
-                <th className="py-2 px-4 text-[11px] font-bold text-slate-500 cursor-default hover:bg-slate-50">수정한 날짜</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {files.map((file) => {
-                const { icon, color } = getIcon(file.type);
-                const isSelected = selectedId === file.id;
-                return (
-                  <tr 
-                    key={file.id} 
-                    onClick={() => setSelectedId(file.id)}
-                    onContextMenu={(e) => handleContextMenu(e, file.id)}
-                    onDoubleClick={openDrive}
-                    className={`group transition-all cursor-pointer select-none border-l-[3px] h-9 ${
-                      isSelected ? 'bg-[#e5f3ff] border-blue-600 shadow-sm' : 'hover:bg-slate-50 border-transparent'
-                    }`}
-                  >
-                    <td className="px-6 truncate">
-                      <div className="flex items-center gap-3">
-                        <span className={`material-symbols-outlined ${color} text-[22px]`}>{icon}</span>
-                        <span className={`text-[12px] font-medium truncate ${isSelected ? 'text-blue-700' : 'text-slate-700'}`}>{file.name}</span>
-                      </div>
-                    </td>
-                    <td className="text-center">
-                      <span className="material-symbols-outlined text-[16px] text-blue-400">{file.status === 'synced' ? 'cloud_done' : 'sync'}</span>
-                    </td>
-                    <td className="px-4 text-[11px] text-slate-400 font-medium">{file.updatedAt}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <main className="flex-1 overflow-auto bg-white flex flex-col">
+          {viewMode === 'details' ? (
+            <table className="w-full text-left border-collapse table-fixed">
+              <thead className="sticky top-0 bg-white border-b border-slate-200 z-10 shadow-sm">
+                <tr className="bg-slate-50/30">
+                  <th className="py-3 px-8 text-[11px] font-black text-slate-500 w-[50%]">파일명</th>
+                  <th className="py-3 px-4 text-[11px] font-black text-slate-500 w-24 text-center">상태</th>
+                  <th className="py-3 px-6 text-[11px] font-black text-slate-500 w-32 text-center">용량</th>
+                  <th className="py-3 px-8 text-[11px] font-black text-slate-500">수정한 날짜</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {filteredFiles.map((file) => {
+                  const { icon, color } = getFileIcon(file.type);
+                  const isSelected = selectedId === file.id;
+                  return (
+                    <tr key={file.id} onClick={() => setSelectedId(file.id)} className={`group hover:bg-blue-50/30 transition-all cursor-pointer h-12 border-l-4 ${isSelected ? 'bg-blue-50/60 border-blue-600' : 'border-transparent'}`}>
+                      <td className="px-8 truncate"><div className="flex items-center gap-4"><span className={`material-symbols-outlined ${color} text-[24px]`}>{icon}</span><span className={`text-[13px] font-bold ${isSelected ? 'text-blue-700' : 'text-slate-700'}`}>{file.name}</span></div></td>
+                      <td className="text-center"><span className={`material-symbols-outlined text-[18px] ${file.status === 'synced' ? 'text-blue-500' : 'text-amber-500 animate-spin'}`}>{file.status === 'synced' ? 'cloud_done' : 'sync'}</span></td>
+                      <td className="text-center px-6"><span className="text-[12px] font-bold text-slate-500">{file.size}</span></td>
+                      <td className="px-8 text-[12px] text-slate-400 font-bold">{file.updatedAt}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          ) : null}
         </main>
 
-        {/* Resizer Handle */}
-        {showPreview && (
-          <div 
-            ref={resizerRef}
-            onMouseDown={startResizing}
-            className={`w-[4px] bg-slate-100 hover:bg-blue-400 cursor-col-resize transition-colors z-20 shrink-0 ${isResizing ? 'bg-blue-600 w-[4px]' : ''}`}
-          />
-        )}
-
-        {/* Preview Pane */}
-        {showPreview && (
-          <aside 
-            style={{ width: `${previewWidth}px` }}
-            className="border-l border-slate-200 bg-white flex flex-col shrink-0 overflow-hidden relative"
-          >
-            {selectedId ? (
-              <div className="flex-1 flex flex-col p-8 items-center text-center overflow-y-auto sidebar-dark-scrollbar">
-                <span className={`material-symbols-outlined text-[96px] mb-8 ${getIcon(files.find(f => f.id === selectedId)?.type || '').color} opacity-90`}>
-                  {getIcon(files.find(f => f.id === selectedId)?.type || '').icon}
-                </span>
-                <h4 className="text-lg font-bold text-slate-900 mb-1 break-all">{files.find(f => f.id === selectedId)?.name}</h4>
-                <p className="text-[11px] text-slate-400 font-bold tracking-wider mb-8 uppercase">Cloud storage object</p>
-                
-                <div className="w-full space-y-3">
-                   <button onClick={openDrive} className="w-full bg-slate-900 text-white py-3.5 rounded-xl text-[12px] font-bold shadow-lg hover:bg-blue-600 transition-all active:scale-95">파일 열기</button>
-                   <button className="w-full border border-slate-200 text-slate-600 py-3.5 rounded-xl text-[12px] font-bold hover:bg-slate-50 transition-all">다운로드</button>
+        {showInfoPanel && (
+          <aside className="w-[380px] border-l border-slate-200 bg-slate-50/30 flex flex-col shrink-0 animate-in slide-in-from-right-4">
+            {selectedFile ? (
+              <div className="flex-1 flex flex-col overflow-y-auto">
+                <div className="p-10 flex flex-col items-center text-center">
+                   <div className="size-36 bg-white rounded-[40px] flex items-center justify-center mb-8 shadow-xl border border-slate-100">
+                      <span className={`material-symbols-outlined text-[88px] ${getFileIcon(selectedFile.type).color}`}>{getFileIcon(selectedFile.type).icon}</span>
+                   </div>
+                   <h3 className="text-xl font-black text-slate-900 mb-2 px-4 leading-tight">{selectedFile.name}</h3>
                 </div>
-
-                <div className="mt-8 w-full p-5 bg-slate-50 rounded-2xl border border-slate-100 text-left">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">상세 정보</p>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-[11px] font-medium"><span className="text-slate-500">크기</span><span className="text-slate-800">{files.find(f => f.id === selectedId)?.size || '--'}</span></div>
-                    <div className="flex justify-between text-[11px] font-medium"><span className="text-slate-500">수정일</span><span className="text-slate-800">{files.find(f => f.id === selectedId)?.updatedAt}</span></div>
-                  </div>
+                <div className="px-8 pb-10 space-y-3">
+                   <button className="w-full bg-slate-900 text-white py-4 rounded-2xl text-[14px] font-bold">원격 드라이브에서 열기</button>
+                   <button className="w-full border-2 border-slate-200 text-slate-700 py-4 rounded-2xl text-[14px] font-bold hover:bg-white">로컬 PC로 다운로드</button>
                 </div>
               </div>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-slate-300 p-8 space-y-4 opacity-50">
-                <span className="material-symbols-outlined text-8xl">visibility</span>
-                <p className="text-[13px] font-bold text-center">미리 볼 파일을 선택하십시오.</p>
-              </div>
-            )}
+            ) : null}
           </aside>
         )}
       </div>
 
-      {/* Context Menu (Floating) */}
-      {contextMenu && (
-        <div 
-          className="fixed bg-white border border-slate-200 shadow-2xl rounded-xl py-1.5 z-[100] min-w-[180px] animate-in fade-in zoom-in-95 duration-100 shadow-blue-900/10"
-          style={{ top: contextMenu.y, left: contextMenu.x }}
-        >
-          {['열기', '수정', '공유', '다운로드', '이름 바꾸기', '삭제', '속성'].map((item, idx) => (
-            <React.Fragment key={item}>
-              {idx === 4 || idx === 6 ? <div className="h-px bg-slate-100 mx-2 my-1"></div> : null}
-              <button 
-                className={`w-full text-left px-4 py-2 text-[12px] font-medium transition-colors flex items-center gap-3 ${item === '삭제' ? 'text-red-500 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'}`}
-                onClick={() => {
-                   alert(`${item}: ${files.find(f => f.id === contextMenu.fileId)?.name}`);
-                   setContextMenu(null);
-                }}
-              >
-                <span className="material-symbols-outlined text-[18px] opacity-70">
-                  {item === '열기' ? 'open_in_new' : item === '다운로드' ? 'download' : item === '삭제' ? 'delete' : 'more_horiz'}
-                </span>
-                {item}
-              </button>
-            </React.Fragment>
-          ))}
+      <footer className="h-14 border-t border-slate-200 bg-slate-900 flex items-center justify-between px-6 shrink-0">
+        <div className="flex items-center gap-8">
+          <div className="flex flex-col">
+            <span className="text-[11px] font-black text-blue-400">{usedStorageGB} GB / {totalStorageGB} GB</span>
+            <div className="w-64 h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div className="h-full bg-blue-600 shadow-[0_0_10px_#2563eb]" style={{ width: `${storagePercentage}%` }}/></div>
+          </div>
         </div>
-      )}
-
-      {/* Footer */}
-      <footer className="bg-[#f0f0f0] border-t border-slate-200 px-4 py-1 flex items-center justify-between shrink-0 h-8">
         <div className="flex items-center gap-4">
-          <span className="text-[11px] text-slate-500 font-semibold">{files.length}개 항목</span>
-          {selectedId && <span className="text-[11px] text-blue-600 font-bold">1개 항목 선택됨</span>}
-        </div>
-        <div className="flex items-center gap-4 text-blue-600">
-           <span className="material-symbols-outlined text-[16px]">cloud_done</span>
-           <span className="text-[10px] font-bold uppercase">Drive Connected</span>
+           <div className="flex items-center gap-2 bg-slate-800/50 px-3 py-1 rounded-full border border-slate-700/50">
+              <span className="size-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_5px_#22c55e]"></span>
+              <span className="text-[10px] font-black text-slate-200 uppercase tracking-tighter">Live Sync Connected</span>
+           </div>
         </div>
       </footer>
     </div>

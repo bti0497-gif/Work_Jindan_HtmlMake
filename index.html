@@ -1,33 +1,71 @@
 
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" class="h-full">
 <head>
     <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Deojon Tech Studio</title>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+    <title>Deojon Tech Studio - Final Version</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-25..0" rel="stylesheet"/>
     <style>
-        body {
-            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+        /* [UI PROTECTION] Global Layout Guard */
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        html, body, #root {
+            height: 100%;
+            width: 100%;
             margin: 0;
             padding: 0;
-            overflow: hidden;
+            overflow: hidden; 
+            background-color: #0f172a;
         }
+        body {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* [UI PROTECTION] Material Symbols Layout Protector */
         .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+            font-family: 'Material Symbols Outlined' !important;
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1.2 !important;
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            vertical-align: middle;
+            text-align: center;
+            overflow: visible !important; /* Prevent pixel clipping in WebView2 */
+            min-width: 1em;
+            min-height: 1em;
         }
-        /* Custom Scrollbar for Dark Sidebar */
-        .sidebar-dark-scrollbar::-webkit-scrollbar {
-            width: 4px;
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
         }
-        .sidebar-dark-scrollbar::-webkit-scrollbar-track {
+        ::-webkit-scrollbar-track {
             background: transparent;
         }
-        .sidebar-dark-scrollbar::-webkit-scrollbar-thumb {
-            background: #475569;
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
             border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .main-content-area::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
         }
     </style>
 <script type="importmap">
@@ -40,7 +78,7 @@
 }
 </script>
 </head>
-<body>
-    <div id="root"></div>
+<body class="h-full">
+    <div id="root" class="h-full"></div>
 </body>
 </html>

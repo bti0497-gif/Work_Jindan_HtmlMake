@@ -7,6 +7,7 @@ export interface Project {
   status: 'In Progress' | 'Completed';
   dueDate: string;
   members: string[]; // URLs of avatars
+  authorId: string;  // 생성자 ID 추가
 }
 
 export interface User {
@@ -75,6 +76,7 @@ export interface Process {
   members: string[]; // Avatar URLs
   description: string;
   isCompleted: boolean;
+  authorId: string;  // 생성자 ID 추가
 }
 
 export interface FileInfo {

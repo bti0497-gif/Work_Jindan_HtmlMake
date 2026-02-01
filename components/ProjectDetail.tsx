@@ -1,20 +1,21 @@
 
 /**
  * FINALIZED UI COMPONENT - DEOJON TECH STUDIO
- * WARNING: DO NOT MODIFY layout, labels, or core styling (Start/End Date, File Section)
- * without explicit permission. This structure reflects the fixed Project Detail Standard.
+ * PROTECTED: Authorship-based Edit/Delete Logic
  */
 
 import React, { useState } from 'react';
-import { Project } from '../types';
+import { Project, User } from '../types';
 
 interface ProjectDetailProps {
   project: Project;
+  currentUser: User; // 현재 사용자 정보 추가
   onBack: () => void;
 }
 
-const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack }) => {
+const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, currentUser, onBack }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const isMine = project.authorId === currentUser.id;
   
   const [formData, setFormData] = useState({
     title: project.title,
@@ -66,11 +67,11 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack }) => {
           <div className="space-y-2">
             <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
               <span className={`material-symbols-outlined text-[16px] ${isEditing ? 'text-indigo-600' : 'text-blue-600'}`}>person</span>
-              작성자
+              작성자 ID
             </label>
             <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3">
-              <img src="https://picsum.photos/seed/master/40/40" className="size-8 rounded-full border-2 border-white shadow-sm" alt="Author" />
-              <span className="text-sm font-bold text-slate-800">김진단 팀장</span>
+              <img src={`https://picsum.photos/seed/${project.authorId}/40/40`} className="size-8 rounded-full border-2 border-white shadow-sm" alt="Author" />
+              <span className="text-sm font-bold text-slate-800 uppercase">{project.authorId} 팀원</span>
             </div>
           </div>
         </div>
@@ -80,7 +81,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack }) => {
             <span className={`material-symbols-outlined text-[16px] ${isEditing ? 'text-indigo-600' : 'text-blue-600'}`}>label</span>
             프로젝트 명칭
           </label>
-          <input type="text" value={formData.title} readOnly={!isEditing} onChange={(e) => setFormData({...formData, title: e.target.value})}
+          <input type="text" value={formData.title} border-transparent readOnly={!isEditing} onChange={(e) => setFormData({...formData, title: e.target.value})}
             className={`w-full rounded-2xl px-5 py-4 text-slate-800 font-bold transition-all outline-none border ${
                 isEditing ? 'bg-white border-indigo-200 focus:ring-4 focus:ring-indigo-50 focus:border-indigo-400' : 'bg-slate-50 border-transparent'
             }`} />
@@ -123,7 +124,6 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack }) => {
                     <span className="material-symbols-outlined text-[14px] font-bold">close</span>
                   </button>
                 )}
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">팀원 {idx + 1}</div>
               </div>
             ))}
             {isEditing && (
@@ -144,50 +144,23 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack }) => {
                 isEditing ? 'bg-white border-indigo-200 focus:ring-4 focus:ring-indigo-50 focus:border-indigo-400' : 'bg-slate-50 border-transparent'
             }`} />
         </div>
-
-        <div className="space-y-2 pb-4">
-          <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-            <span className={`material-symbols-outlined text-[16px] ${isEditing ? 'text-indigo-600' : 'text-blue-600'}`}>attach_file</span>
-            첨부 파일
-          </label>
-          <div className={`w-full rounded-2xl p-8 transition-all border ${
-            isEditing 
-            ? 'border-dashed border-indigo-200 bg-indigo-50/20 hover:bg-indigo-50 hover:border-indigo-400 cursor-pointer' 
-            : 'bg-slate-50 border-transparent'
-          }`}>
-            {attachedFiles.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {attachedFiles.map((file, idx) => (
-                  <div key={idx} className="flex items-center gap-3 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                    <span className="material-symbols-outlined text-blue-600">description</span>
-                    <span className="text-[13px] font-bold text-slate-700 truncate">{file.name}</span>
-                    {isEditing && (
-                       <button className="ml-auto text-red-400 hover:text-red-600">
-                         <span className="material-symbols-outlined text-[20px]">delete</span>
-                       </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-6 text-slate-400">
-                <span className="material-symbols-outlined text-5xl mb-3 opacity-20">cloud_off</span>
-                <p className="text-sm font-bold tracking-tight">첨부파일 없음</p>
-                {isEditing && <p className="text-[11px] mt-2 text-indigo-400 font-medium">업로드할 파일을 선택하거나 드래그하세요</p>}
-              </div>
-            )}
-          </div>
-        </div>
       </div>
 
       <div className="p-8 flex items-center justify-end gap-4 border-t border-slate-100 bg-slate-50/50 shrink-0">
         {!isEditing ? (
           <>
             <button onClick={onBack} className="px-6 py-3 text-sm font-bold text-slate-400 hover:text-slate-800 transition-colors">목록으로</button>
-            <button onClick={() => setIsEditing(true)} className="bg-blue-600 text-white px-8 py-3.5 rounded-2xl text-sm font-bold shadow-2xl shadow-blue-100 hover:bg-blue-700 active:scale-95 transition-all flex items-center gap-2">
-              <span className="material-symbols-outlined text-[22px]">edit_square</span>
-              수정 모드 전환
-            </button>
+            {isMine ? (
+              <button onClick={() => setIsEditing(true)} className="bg-blue-600 text-white px-8 py-3.5 rounded-2xl text-sm font-bold shadow-2xl shadow-blue-100 hover:bg-blue-700 active:scale-95 transition-all flex items-center gap-2">
+                <span className="material-symbols-outlined text-[22px]">edit_square</span>
+                수정 모드 전환
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 bg-slate-100 px-6 py-3 rounded-2xl text-slate-400">
+                <span className="material-symbols-outlined text-[18px]">lock</span>
+                <span className="text-[13px] font-bold">읽기 전용 (작성자 아님)</span>
+              </div>
+            )}
           </>
         ) : (
           <>

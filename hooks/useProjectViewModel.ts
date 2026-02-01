@@ -7,10 +7,11 @@ export const useProjectViewModel = (initialProjects: Project[], initialProcesses
   const [processes, setProcesses] = useState<Process[]>(initialProcesses);
 
   // 로직: 공정 상태에 따른 프로젝트 진행률 자동 계산
+  // Explicitly type the map return to Project to ensure the 'status' property doesn't widen to 'string'
   const projectsWithProgress = useMemo(() => {
-    return projects.map(project => {
+    return projects.map((project): Project => {
       const projectProcesses = processes.filter(p => p.projectId === project.id);
-      if (projectProcesses.length === 0) return { ...project, progress: 0, status: 'In Progress' as const };
+      if (projectProcesses.length === 0) return { ...project, progress: 0, status: 'In Progress' };
       
       const completedCount = projectProcesses.filter(p => p.isCompleted).length;
       const progress = Math.round((completedCount / projectProcesses.length) * 100);

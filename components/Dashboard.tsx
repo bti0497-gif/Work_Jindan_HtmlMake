@@ -25,9 +25,7 @@ const LatestProcesses: React.FC<{ logs: ProcessLog[] }> = ({ logs }) => (
               log.status === 'In Progress' ? 'bg-blue-500 animate-pulse' : 'bg-slate-300'
             }`}></div>
             <div className="min-w-0">
-              {/* 공정명을 제목으로 강조 */}
               <p className="text-[13px] font-bold text-slate-800 truncate">{log.step}</p>
-              {/* 소속 프로젝트명을 아래에 표시 */}
               <p className="text-[11px] text-slate-500 mt-0.5">{log.projectName}</p>
             </div>
           </div>
@@ -100,7 +98,6 @@ const RecentFiles: React.FC<{ files: FileInfo[] }> = ({ files }) => (
 );
 
 const Dashboard: React.FC<DashboardProps> = ({ recentProjects }) => {
-  // Mock Dashboard Data
   const mockProcessLogs: ProcessLog[] = [
     { id: 'l1', projectName: '영흥도 수질 진단 컨설팅', step: '수질 샘플 채취 분석', status: 'Completed', updatedAt: '2시간 전' },
     { id: 'l2', projectName: '공장 폐수 정화 모니터링', step: '센서 데이터 연동 테스트', status: 'In Progress', updatedAt: '30분 전' },
@@ -114,52 +111,45 @@ const Dashboard: React.FC<DashboardProps> = ({ recentProjects }) => {
   ];
 
   return (
-    <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50/30">
-      <div className="max-w-7xl mx-auto space-y-8">
-        
-        {/* Section 1: Recent Projects */}
-        <section>
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="font-bold text-slate-900 flex items-center gap-2 uppercase tracking-tight">
-              <span className="material-symbols-outlined text-blue-600">dashboard_customize</span>
-              최신 프로젝트
-            </h3>
-            <button className="text-[11px] font-bold text-slate-400 hover:text-blue-600 transition-colors uppercase tracking-widest">See All Projects</button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {recentProjects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
-        </section>
-
-        {/* Section 2: Split View for Processes and Files */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          <LatestProcesses logs={mockProcessLogs} />
-          <RecentFiles files={mockFiles} />
+    <div className="p-4 md:p-8 space-y-8">
+      <section>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="font-bold text-slate-900 flex items-center gap-2 uppercase tracking-tight">
+            <span className="material-symbols-outlined text-blue-600">dashboard_customize</span>
+            최신 프로젝트
+          </h3>
+          <button className="text-[11px] font-bold text-slate-400 hover:text-blue-600 transition-colors uppercase tracking-widest">See All Projects</button>
         </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {recentProjects.map((project) => (
+            <ProjectCard key={project.id} project={project} />
+          ))}
+        </div>
+      </section>
 
-        {/* Section 3: Placeholders for Gallery/Charts */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="h-32 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 flex flex-col justify-between text-white shadow-lg shadow-blue-200">
-            <span className="material-symbols-outlined">analytics</span>
-            <div>
-              <p className="text-[10px] font-bold uppercase opacity-80 tracking-widest">전체 공정율</p>
-              <p className="text-2xl font-bold">78.4%</p>
-            </div>
-          </div>
-          <div className="h-32 bg-white border border-slate-200 rounded-2xl p-5 flex flex-col justify-between text-slate-400">
-            <span className="material-symbols-outlined">add_photo_alternate</span>
-            <p className="text-[11px] font-bold text-center">갤러리 섹션 (준비중)</p>
-          </div>
-          <div className="h-32 bg-white border border-slate-200 rounded-2xl p-5 flex flex-col justify-between text-slate-400">
-            <span className="material-symbols-outlined">calendar_month</span>
-            <p className="text-[11px] font-bold text-center">주요 일정 (준비중)</p>
-          </div>
-        </section>
-
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <LatestProcesses logs={mockProcessLogs} />
+        <RecentFiles files={mockFiles} />
       </div>
-    </main>
+
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-8">
+        <div className="h-32 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 flex flex-col justify-between text-white shadow-lg shadow-blue-200">
+          <span className="material-symbols-outlined">analytics</span>
+          <div>
+            <p className="text-[10px] font-bold uppercase opacity-80 tracking-widest">전체 공정율</p>
+            <p className="text-2xl font-bold">78.4%</p>
+          </div>
+        </div>
+        <div className="h-32 bg-white border border-slate-200 rounded-2xl p-5 flex flex-col justify-between text-slate-400">
+          <span className="material-symbols-outlined">add_photo_alternate</span>
+          <p className="text-[11px] font-bold text-center">갤러리 섹션 (준비중)</p>
+        </div>
+        <div className="h-32 bg-white border border-slate-200 rounded-2xl p-5 flex flex-col justify-between text-slate-400">
+          <span className="material-symbols-outlined">calendar_month</span>
+          <p className="text-[11px] font-bold text-center">주요 일정 (준비중)</p>
+        </div>
+      </section>
+    </div>
   );
 };
 

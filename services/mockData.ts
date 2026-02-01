@@ -9,12 +9,23 @@ export const INITIAL_PROJECTS: Project[] = [
     progress: 0,
     status: 'In Progress',
     dueDate: '2024-11-15',
-    members: ['https://picsum.photos/seed/user1/100/100', 'https://picsum.photos/seed/user2/100/100', 'https://picsum.photos/seed/user3/100/100']
+    members: ['https://picsum.photos/seed/user1/100/100', 'https://picsum.photos/seed/user2/100/100', 'https://picsum.photos/seed/user3/100/100'],
+    authorId: 'master'
   }
 ];
 
 export const INITIAL_PROCESSES: Process[] = [
-  { id: 'pr1', projectId: '1', title: '현장 수질 샘플 채취', startDate: '2024-11-01', endDate: '2024-11-05', members: ['https://picsum.photos/seed/user1/40/40'], description: '영흥도 12개 지점 샘플링', isCompleted: true }
+  { 
+    id: 'pr1', 
+    projectId: '1', 
+    title: '현장 수질 샘플 채취', 
+    startDate: '2024-11-01', 
+    endDate: '2024-11-05', 
+    members: ['https://picsum.photos/seed/user1/40/40'], 
+    description: '영흥도 12개 지점 샘플링', 
+    isCompleted: true,
+    authorId: 'master'
+  }
 ];
 
 export const INITIAL_TASKS: Task[] = [
